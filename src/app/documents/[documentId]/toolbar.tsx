@@ -1,9 +1,19 @@
 'use client';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/store/use-editor-store';
@@ -11,17 +21,176 @@ import { type Level } from '@tiptap/extension-heading';
 import {
   Bold,
   ChevronDown,
+  Highlighter,
+  Image,
   Italic,
+  Link2,
   ListTodo,
   LucideIcon,
   MessageSquarePlus,
   Printer,
   Redo2,
   RemoveFormatting,
+  Search,
   SpellCheck,
   Underline,
   Undo2,
+  Upload,
 } from 'lucide-react';
+import { useState } from 'react';
+import { SketchPicker, type ColorResult } from 'react-color';
+
+const ImageButton = () => {
+  const { editor } = useEditorStore();
+  const [imageUrl, setImageUrl] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const onChange = (src: string) => {
+    editor?.chain().focus().setImage({ src }).run();
+  };
+
+  const onUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const imageUrl = URL.createObjectURL(file);
+        onChange(imageUrl);
+      }
+    };
+    input.click();
+  };
+
+  const handleImageUrlSubmit = () => {
+    if (imageUrl) {
+      onChange(imageUrl);
+      setIsDialogOpen(false);
+      setImageUrl('');
+    }
+  };
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className='h-7 min-w-7 shrink-0 flex flex-col items-center justify-center rounded-sm hover:bg-neutral-200/80 px-1.5 overflow-hidden text-sm'>
+            <Image className='size-4' />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={onUpload}>
+            <Upload className='mr-2 size-4' />
+            Upload
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsDialogOpen(true)}>
+            <Search className='mr-2 size-4' />
+            Paste image URL
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Insert image URL</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder='Insert image URL'
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleImageUrlSubmit();
+              }
+            }}
+          />
+        <DialogFooter>
+          <Button onClick={handleImageUrlSubmit} disabled={!imageUrl}>
+            Insert
+          </Button>
+        </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const LinkButton = () => {
+  const { editor } = useEditorStore();
+  const [value, setvalue] = useState('');
+  const onChange = (href: string) => {
+    editor?.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    setvalue('');
+  };
+  return (
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) {
+          setvalue(editor?.getAttributes('link').href);
+        }
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <button className='h-7 min-w-7 shrink-0 flex flex-col items-center justify-center rounded-sm hover:bg-neutral-200/80 px-1.5 overflow-hidden text-sm'>
+          <Link2 className='size-4' />
+          <div className='h-0.5 w-full' style={{ backgroundColor: value }} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className='p-2.5 flex items-center gap-x-2'>
+        <Input
+          placeholder='https://example.com'
+          value={value}
+          onChange={(e) => setvalue(e.target.value)}
+        />
+        <Button onClick={() => onChange(value)}>Apply</Button>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const HighlightColorButton = () => {
+  const { editor } = useEditorStore();
+  const value = editor?.getAttributes('highlight').color || '#000000';
+  const onChange = (color: ColorResult) => {
+    editor?.chain().focus().setHighlight({ color: color.hex }).run();
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className='h-7 min-w-7 shrink-0 flex flex-col items-center justify-center rounded-sm hover:bg-neutral-200/80 px-1.5 overflow-hidden text-sm'>
+          <Highlighter className='size-4' />
+          <div className='h-0.5 w-full' style={{ backgroundColor: value }} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className='p-0'>
+        <SketchPicker color={value} onChange={onChange} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const TextColorButton = () => {
+  const { editor } = useEditorStore();
+  const value = editor?.getAttributes('textStyle').color || '#000000';
+  const onChange = (color: ColorResult) => {
+    editor?.chain().focus().setColor(color.hex).run();
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className='h-7 min-w-7 shrink-0 flex flex-col items-center justify-center rounded-sm hover:bg-neutral-200/80 px-1.5 overflow-hidden text-sm'>
+          <span className='text-xs'>A</span>
+          <div
+            className='h-0.5 w-full'
+            style={{ backgroundColor: value }}
+          ></div>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className='p-0'>
+        <SketchPicker color={value} onChange={onChange} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const HeadingLevelButton = () => {
   const { editor } = useEditorStore();
@@ -33,14 +202,14 @@ const HeadingLevelButton = () => {
     { label: 'Heading 4', value: 4, fontSize: '18px' },
     { label: 'Heading 5', value: 5, fontSize: '16px' },
   ];
- const getCurrentHeading = () => {
-   for (let level = 1; level <= 5; level++) {
-     if (editor?.isActive(`heading`, { level })) {
-       return `Heading ${level}`;
-     }
-   }
-   return 'Normal text';
- };
+  const getCurrentHeading = () => {
+    for (let level = 1; level <= 5; level++) {
+      if (editor?.isActive(`heading`, { level })) {
+        return `Heading ${level}`;
+      }
+    }
+    return 'Normal text';
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -234,11 +403,11 @@ export const Toolbar = () => {
       {sections[1]?.map((item) => (
         <ToolbarButton key={item.label} {...item} />
       ))}
-      {/* TODO: text color */}
-      {/* TODO: highlight color */}
+      <TextColorButton />
+      <HighlightColorButton />
       <Separator orientation='vertical' className='bg-neutral-300 h-6' />
-      {/* TODO: link */}
-      {/* TODO: image */}
+      <LinkButton />
+      <ImageButton />
       {/* TODO: align */}
       {/* TODO: line height */}
       {/* TODO: list */}
