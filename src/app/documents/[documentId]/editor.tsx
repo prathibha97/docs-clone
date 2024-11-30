@@ -19,9 +19,11 @@ import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ImageResize from 'tiptap-extension-resize-image';
+import { Ruler } from './Ruler';
 export const Editor = () => {
   const { setEditor } = useEditorStore();
   const editor = useEditor({
+    immediatelyRender: false,
     onCreate: ({ editor }) => {
       setEditor(editor);
     },
@@ -107,6 +109,7 @@ export const Editor = () => {
   });
   return (
     <div className='size-full overflow-auto bg-[F9FBFD] px-4 print:p-0 print:bg-white print:overflow-visible'>
+      <Ruler/>
       <div className='min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0'>
         <EditorContent editor={editor} />
       </div>
