@@ -2,6 +2,7 @@
 import { FontSizeExtension } from '@/extensions/font-size';
 import { LineHeightExtension } from '@/extensions/line-height';
 import { useEditorStore } from '@/store/use-editor-store';
+import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
 import { Color } from '@tiptap/extension-color';
 import FontFamily from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
@@ -19,8 +20,10 @@ import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ImageResize from 'tiptap-extension-resize-image';
-import { Ruler } from './Ruler';
+import { Ruler } from './ruler';
+import { Threads } from './threads';
 export const Editor = () => {
+  const liveblocks = useLiveblocksExtension();
   const { setEditor } = useEditorStore();
   const editor = useEditor({
     immediatelyRender: false,
@@ -56,7 +59,10 @@ export const Editor = () => {
       },
     },
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        history: false,
+      }),
+      liveblocks,
       FontSizeExtension,
       LineHeightExtension.configure({
         types: ['heading', 'paragraph'],
@@ -96,6 +102,7 @@ export const Editor = () => {
       <Ruler />
       <div className='min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0'>
         <EditorContent editor={editor} />
+        <Threads editor={editor} />
       </div>
     </div>
   );
