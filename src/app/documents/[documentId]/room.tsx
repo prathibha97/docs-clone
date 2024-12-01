@@ -9,7 +9,8 @@ import {
 import { useParams } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { getUsers } from './actions';
+import { Id } from '../../../../convex/_generated/dataModel';
+import { getDocuments, getUsers } from './actions';
 
 type User = {
   id: string;
@@ -38,7 +39,17 @@ export function Room({ children }: { children: ReactNode }) {
   }, [fetchUsers]);
   return (
     <LiveblocksProvider
-      authEndpoint={'/api/liveblocks-auth'}
+      authEndpoint={async () => {
+        const endpoint = '/api/liveblocks-auth';
+        const room = params.documentId as string;
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+
+          body: JSON.stringify({ room }),
+        });
+        return await response.json();
+      }}
       throttle={16}
       resolveUsers={({ userIds }) => {
         return userIds.map(
@@ -54,7 +65,13 @@ export function Room({ children }: { children: ReactNode }) {
         }
         return filteredUsers.map((user) => user.id);
       }}
-      resolveRoomsInfo={() => []}
+      resolveRoomsInfo={async ({ roomIds }) => {
+        const documents = await getDocuments(roomIds as Id<'documents'>[]);
+        return documents.map((document) => ({
+          id: document.id,
+          name: document.name,
+        }));
+      }}
     >
       <RoomProvider id={params.documentId as string}>
         <ClientSideSuspense
